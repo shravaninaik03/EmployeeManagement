@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Employee Management</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>Employee Management</h2>
+
+        <button onclick="showSection('dashboardSection')">Dashboard</button>
+        <button onclick="showSection('employeesSection')">Employees</button>
+        <button onclick="showSection('departmentsSection')">Departments</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+        <!-- ================= DASHBOARD ================= -->
+
+        <section id="dashboardSection" class="section">
+
+            <h1>Dashboard</h1>
+            <p class="subtitle">Employee Management Overview</p>
+
+            <div class="cards">
+
+                <div class="card">
+                    <h3>Total Employees</h3>
+                    <p id="totalEmployees">0</p>
+                </div>
+
+                <div class="card">
+                    <h3>Active Employees</h3>
+                    <p id="activeEmployees">0</p>
+                </div>
+
+                <div class="card">
+                    <h3>Inactive Employees</h3>
+                    <p id="inactiveEmployees">0</p>
+                </div>
+
+                <div class="card">
+                    <h3>Total Departments</h3>
+                    <p id="totalDepartments">Loading...</p>
+                </div>
+
+                <div class="card">
+                    <h3>Joined This Month</h3>
+                    <p id="joinedThisMonth">0</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= EMPLOYEES ================= -->
+
+        <section id="employeesSection" class="section hidden">
+
+            <div class="section-header">
+                <div>
+                    <h1>Employees</h1>
+                    <p class="subtitle">Manage employees</p>
+                </div>
+
+                <button class="primary-btn" onclick="openEmployeeModal()">
+                    + Add Employee
+                </button>
+            </div>
+        <p class="search-info">
+    You can search employees by First Name, Last Name, or Department ID.
+</p>
+            <div class="search-bar">
+
+    <input type="text" id="searchName" placeholder="First Name">
+
+    <input type="number" id="searchDept" placeholder="Department ID">
+
+    <input type="text" id="searchLname" placeholder="Last Name">
+
+    <button class="primary-btn" onclick="searchEmployees()">Search</button>
+
+    <button class="secondary-btn" onclick="loadEmployees()">Clear</button>
+
+</div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Salary</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="employeeTableBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= DEPARTMENTS ================= -->
+
+        <section id="departmentsSection" class="section hidden">
+
+            <div class="section-header">
+                <div>
+                    <h1>Departments</h1>
+                    <p class="subtitle">Manage departments</p>
+                </div>
+
+                <button class="primary-btn" onclick="openDepartmentModal()">
+                    + Add Department
+                </button>
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Department Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="departmentTableBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- ================= EMPLOYEE MODAL ================= -->
+
+    <div id="employeeModal" class="modal">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h2 id="employeeModalTitle">Add Employee</h2>
+
+                <button onclick="closeEmployeeModal()">×</button>
+            </div>
+
+            <form id="employeeForm">
+
+                <input type="hidden" id="employeeId">
+
+                <label>Employee Code</label>
+                <input type="text" id="empcode" required>
+
+                <label>First Name</label>
+                <input type="text" id="empFname" required>
+
+                <label>Last Name</label>
+                <input type="text" id="empLname" required>
+
+                <label>Email</label>
+                <input type="email" id="empemail" required>
+
+                <label>Mobile</label>
+                <input type="number" id="empmobile" required>
+
+                <label>Date of Birth</label>
+                <input type="date" id="dob" required>
+
+                <label>Department</label>
+                <select id="departmentId" required></select>
+
+                <label>Salary</label>
+                <input type="number" id="salary" required>
+
+                <label>Joining Date</label>
+                <input type="date" id="joiningDate" required>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="isActive">
+                    Active
+                </label>
+
+                <div class="modal-actions">
+
+                    <button type="button"
+                            class="secondary-btn"
+                            onclick="closeEmployeeModal()">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="primary-btn">
+                        Save
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= DEPARTMENT MODAL ================= -->
+
+    <div id="departmentModal" class="modal">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h2 id="departmentModalTitle">Add Department</h2>
+
+                <button onclick="closeDepartmentModal()">×</button>
+
+            </div>
+
+            <form id="departmentForm">
+
+                <input type="hidden" id="departmentId">
+
+                <label>Department Name</label>
+
+                <input type="text"
+                       id="departmentName"
+                       required>
+
+                <div class="modal-actions">
+
+                    <button type="button"
+                            class="secondary-btn"
+                            onclick="closeDepartmentModal()">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="primary-btn">
+                        Save
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
