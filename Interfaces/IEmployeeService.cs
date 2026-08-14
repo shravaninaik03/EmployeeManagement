@@ -20,7 +20,7 @@ public interface IEmployeeService
     Task <IEnumerable<Employee>> GetEmployeebySearch(string? fname,int? deptid, string? lname);
     Task <Employee> AddEmployee(CreateEmployeeDto employee);
 
-    Task <Employee?> UpdateEmployee (int id, Employee employee );
+    Task <Employee?> UpdateEmployee (int id, EmployeeUpdateDto employeeDto);
 
     Task <bool> Delete(int id);
 }

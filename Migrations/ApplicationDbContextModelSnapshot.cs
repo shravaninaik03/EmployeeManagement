@@ -50,7 +50,7 @@ namespace Emp.Migrations
                     b.Property<DateOnly>("DOB")
                         .HasColumnType("date");
 
-                    b.Property<int>("DepartmentId")
+                    b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
                     b.Property<string>("EmpFname")
@@ -118,8 +118,7 @@ namespace Emp.Migrations
                     b.HasOne("Emp.Modals.Department", "Department")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Department");
                 });

@@ -8,14 +8,9 @@ namespace Emp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class EmployeeController : ControllerBase
+public class EmployeeController(IEmployeeService employeeService) : ControllerBase
 {
-    private readonly IEmployeeService _employeeService;
-
-    public EmployeeController(IEmployeeService employeeService)
-    {
-        _employeeService = employeeService;
-    }
+    private readonly IEmployeeService _employeeService = employeeService;
 
     [HttpGet]
     public async Task<IActionResult> GetEmployees()
@@ -80,9 +75,9 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
+    public async Task<IActionResult> UpdateEmployee(int id, EmployeeUpdateDto employeeDto)
     {
-        var updatedEmp = await _employeeService.UpdateEmployee(id, employee);
+        var updatedEmp = await _employeeService.UpdateEmployee(id, employeeDto);
 
         if (updatedEmp == null)
             return NotFound();

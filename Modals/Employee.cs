@@ -18,7 +18,7 @@ public class Employee : IEntity
     
     public DateOnly DOB { get; set; }
 
-    public int DepartmentId { get; set; }
+    public int? DepartmentId { get; set; }
 
     public decimal Salary { get; set; }
 

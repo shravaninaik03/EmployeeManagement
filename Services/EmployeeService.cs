@@ -2,6 +2,8 @@ using Emp.Modals;
 using Emp.Interfaces;
 using System.Net.WebSockets;
 using Emp.DTOs;
+using AutoMapper;
+using Emp.Mappings;
 
 namespace Emp.Services;
 
@@ -9,10 +11,13 @@ public class EmployeeService : IEmployeeService
 {
     private readonly IRepository<Employee> _repository;
     private readonly ILogger<EmployeeService> _logger;
-    public EmployeeService(IRepository<Employee> repository, ILogger<EmployeeService> logger)
+
+    private readonly IMapper _mapper;  // IMapper provided by AutoMapper
+    public EmployeeService(IRepository<Employee> repository, ILogger<EmployeeService> logger, IMapper mapper)
     {
         _repository = repository;
         _logger = logger;
+        _mapper = mapper;
     }
     
      public async Task <IEnumerable<Employee>> GetEmployees()
@@ -132,7 +137,7 @@ public class EmployeeService : IEmployeeService
         return emp;
      }
 
-    public async Task <Employee?> UpdateEmployee(int id, Employee employee)
+    public async Task <Employee?> UpdateEmployee(int id, EmployeeUpdateDto employeeDto)
     {
         try{
         var existingEmployee = await _repository.GetByIdAsync(id);
@@ -140,16 +145,7 @@ public class EmployeeService : IEmployeeService
         if(existingEmployee==null)
         return null;
 
-        existingEmployee.Empcode = employee.Empcode;
-        existingEmployee.EmpFname = employee.EmpFname;
-        existingEmployee.EmpLname = employee.EmpLname;
-        existingEmployee.Empemail = employee.Empemail;
-        existingEmployee.Empmobile = employee.Empmobile;
-        existingEmployee.DOB = employee.DOB;
-        existingEmployee.DepartmentId = employee.DepartmentId;
-        existingEmployee.Salary = employee.Salary;
-        existingEmployee.JoiningDate = employee.JoiningDate;
-        existingEmployee.IsActive = employee.IsActive;
+        _mapper.Map(employeeDto , existingEmployee);
 
         await _repository.Update(existingEmployee);
         await _repository.SaveAsync();
