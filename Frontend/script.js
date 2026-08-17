@@ -2,28 +2,147 @@ const API_BASE = "http://localhost:5273/api";
 
 
 /* =========================================================
+   AUTHENTICATION
+========================================================= */
+
+document.getElementById("loginForm")
+    .addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const username =
+            document.getElementById("loginUsername").value;
+
+        const password =
+            document.getElementById("loginPassword").value;
+
+        const loginError =
+            document.getElementById("loginError");
+
+        try {
+
+            const response = await fetch(`${API_BASE}/Auth/login`, {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+
+            });
+
+
+            if (!response.ok) {
+
+                loginError.innerText =
+                    "Invalid username or password.";
+
+                return;
+            }
+
+
+            const data = await response.json();
+
+
+            // Store JWT token in browser
+            localStorage.setItem("token", data.token);
+
+
+            // Hide login page
+            document.getElementById("loginSection")
+                .style.display = "none";
+
+
+            // Show main application
+            document.getElementById("mainApp")
+                .style.display = "block";
+
+
+            // Load initial data
+            await loadDepartments();
+            await loadEmployees();
+            await loadDashboard();
+
+        }
+        catch (error) {
+
+            console.error("Login error:", error);
+
+            loginError.innerText =
+                "Could not connect to server.";
+
+        }
+
+    });
+
+
+/* =========================================================
+   GET TOKEN
+========================================================= */
+
+function getToken() {
+
+    return localStorage.getItem("token");
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+function logout() {
+
+    localStorage.removeItem("token");
+
+    location.reload();
+
+}
+
+
+/* =========================================================
    SECTION NAVIGATION
 ========================================================= */
 
 function showSection(sectionId) {
 
-    document.querySelectorAll(".section").forEach(section => {
-        section.classList.add("hidden");
-    });
+    document.querySelectorAll(".section")
+        .forEach(section => {
 
-    document.getElementById(sectionId).classList.remove("hidden");
+            section.classList.add("hidden");
+
+        });
+
+
+    document.getElementById(sectionId)
+        .classList.remove("hidden");
+
 
     if (sectionId === "dashboardSection") {
+
         loadDashboard();
+
     }
+
 
     if (sectionId === "employeesSection") {
+
         loadEmployees();
+
     }
 
+
     if (sectionId === "departmentsSection") {
+
         loadDepartments();
+
     }
+
 }
 
 
@@ -35,32 +154,56 @@ async function loadDashboard() {
 
     try {
 
+        const token = getToken();
+
+
         const response =
-            await fetch(`${API_BASE}/Dashboard`);
+            await fetch(`${API_BASE}/Dashboard`, {
+
+                headers: {
+
+                    "Authorization": `Bearer ${token}`
+
+                }
+
+            });
+
 
         if (!response.ok) {
+
             throw new Error("Failed to fetch dashboard");
+
         }
+
 
         const data = await response.json();
 
+
         console.log("Dashboard:", data);
+
+
         document.getElementById("totalEmployees").innerText =
-        data.totalEmployees;
+            data.totalEmployees;
+
 
         document.getElementById("activeEmployees").innerText =
-        data.activeEmployees;
+            data.activeEmployees;
+
 
         document.getElementById("inactiveEmployees").innerText =
-        data.inactiveEmployees;
+            data.inactiveEmployees;
 
-    document.getElementById("totalDepartments").innerText =
-    data.totaldDepartments;
 
-    document.getElementById("joinedThisMonth").innerText =
-    data.joinedthismonth;
+        document.getElementById("totalDepartments").innerText =
+            data.totaldDepartments;
+
+
+        document.getElementById("joinedThisMonth").innerText =
+            data.joinedthismonth;
 
     }
+
+
     catch (error) {
 
         console.error("Dashboard error:", error);
@@ -78,29 +221,52 @@ async function loadEmployees() {
 
     try {
 
+        const token = getToken();
+
+
         const response =
-            await fetch(`${API_BASE}/Employee`);
+            await fetch(`${API_BASE}/Employee`, {
+
+                headers: {
+
+                    "Authorization": `Bearer ${token}`
+
+                }
+
+            });
+
 
         if (!response.ok) {
+
             throw new Error("Failed to fetch employees");
+
         }
 
-        const employees = await response.json();
+
+        const employees =
+            await response.json();
+
 
         const tableBody =
             document.getElementById("employeeTableBody");
 
+
         tableBody.innerHTML = "";
+
 
         employees.forEach(employee => {
 
-            const row = document.createElement("tr");
+            const row =
+                document.createElement("tr");
+
 
             const departmentName =
                 employee.department?.departmentName
                 || "Department " + employee.departmentId;
 
+
             row.innerHTML = `
+
                 <td>${employee.employeeId}</td>
 
                 <td>${employee.empcode}</td>
@@ -117,114 +283,218 @@ async function loadEmployees() {
                 <td>₹${employee.salary}</td>
 
                 <td>
-                    ${employee.isActive ? "Active" : "Inactive"}
+                    ${employee.isActive
+                        ? "Active"
+                        : "Inactive"}
                 </td>
 
                 <td>
+
                     <div class="actions">
 
                         <button
                             class="edit-btn"
                             onclick="editEmployee(${employee.employeeId})">
+
                             Edit
+
                         </button>
+
 
                         <button
                             class="delete-btn"
                             onclick="deleteEmployee(${employee.employeeId})">
+
                             Delete
+
                         </button>
 
                     </div>
+
                 </td>
+
             `;
+
 
             tableBody.appendChild(row);
 
         });
 
     }
+
+
     catch (error) {
 
-        console.error("Employee loading error:", error);
+        console.error(
+            "Employee loading error:",
+            error
+        );
 
     }
 
 }
+
+
+/* =========================================================
+   SEARCH EMPLOYEES
+========================================================= */
+
 async function searchEmployees() {
 
-    const fname = document.getElementById("searchName").value;
-    const deptid = document.getElementById("searchDept").value;
-    const lname = document.getElementById("searchLname").value;
+    const fname =
+        document.getElementById("searchName").value;
 
-    let url = `${API_BASE}/Employee/Search?`;
+
+    const deptid =
+        document.getElementById("searchDept").value;
+
+
+    const lname =
+        document.getElementById("searchLname").value;
+
+
+    let url =
+        `${API_BASE}/Employee/Search?`;
+
 
     if (fname)
-        url += `fname=${encodeURIComponent(fname)}&`;
+        url +=
+            `fname=${encodeURIComponent(fname)}&`;
+
 
     if (deptid)
-        url += `deptid=${deptid}&`;
+        url +=
+            `deptid=${deptid}&`;
+
 
     if (lname)
-        url += `lname=${encodeURIComponent(lname)}`;
+        url +=
+            `lname=${encodeURIComponent(lname)}`;
+
 
     try {
 
-        const response = await fetch(url);
+        const token = getToken();
+
+
+        const response =
+            await fetch(url, {
+
+                headers: {
+
+                    "Authorization":
+                        `Bearer ${token}`
+
+                }
+
+            });
+
 
         if (!response.ok) {
+
             alert("Employee not found");
+
             return;
+
         }
 
-        const employees = await response.json();
+
+        const employees =
+            await response.json();
+
 
         const tableBody =
-            document.getElementById("employeeTableBody");
+            document.getElementById(
+                "employeeTableBody"
+            );
+
 
         tableBody.innerHTML = "";
 
+
         employees.forEach(employee => {
 
-            const row = document.createElement("tr");
+            const row =
+                document.createElement("tr");
+
 
             const departmentName =
                 employee.department?.departmentName
                 || "Department " + employee.departmentId;
 
+
             row.innerHTML = `
+
                 <td>${employee.employeeId}</td>
+
                 <td>${employee.empcode}</td>
-                <td>${employee.empFname} ${employee.empLname}</td>
-                <td>${employee.empemail}</td>
-                <td>${departmentName}</td>
-                <td>₹${employee.salary}</td>
-                <td>${employee.isActive ? "Active" : "Inactive"}</td>
+
                 <td>
+                    ${employee.empFname}
+                    ${employee.empLname}
+                </td>
+
+                <td>${employee.empemail}</td>
+
+                <td>${departmentName}</td>
+
+                <td>₹${employee.salary}</td>
+
+                <td>
+                    ${employee.isActive
+                        ? "Active"
+                        : "Inactive"}
+                </td>
+
+                <td>
+
                     <div class="actions">
+
                         <button
                             class="edit-btn"
                             onclick="editEmployee(${employee.employeeId})">
+
                             Edit
+
                         </button>
+
 
                         <button
                             class="delete-btn"
                             onclick="deleteEmployee(${employee.employeeId})">
+
                             Delete
+
                         </button>
+
                     </div>
+
                 </td>
+
             `;
 
+
             tableBody.appendChild(row);
+
         });
 
     }
+
+
     catch (error) {
-        console.error("Search error:", error);
-        alert("Could not search employees.");
+
+        console.error(
+            "Search error:",
+            error
+        );
+
+
+        alert(
+            "Could not search employees."
+        );
+
     }
+
 }
 
 
@@ -236,27 +506,52 @@ async function loadDepartments() {
 
     try {
 
+        const token = getToken();
+
+
         const response =
-            await fetch(`${API_BASE}/Department`);
+            await fetch(`${API_BASE}/Department`, {
+
+                headers: {
+
+                    "Authorization":
+                        `Bearer ${token}`
+
+                }
+
+            });
+
 
         if (!response.ok) {
-            throw new Error("Failed to fetch departments");
+
+            throw new Error(
+                "Failed to fetch departments"
+            );
+
         }
 
-        const departments = await response.json();
 
-        /* TABLE */
+        const departments =
+            await response.json();
+
 
         const tableBody =
-            document.getElementById("departmentTableBody");
+            document.getElementById(
+                "departmentTableBody"
+            );
+
 
         tableBody.innerHTML = "";
 
+
         departments.forEach(department => {
 
-            const row = document.createElement("tr");
+            const row =
+                document.createElement("tr");
+
 
             row.innerHTML = `
+
                 <td>${department.departmentId}</td>
 
                 <td>${department.departmentName}</td>
@@ -268,19 +563,26 @@ async function loadDepartments() {
                         <button
                             class="edit-btn"
                             onclick="editDepartment(${department.departmentId})">
+
                             Edit
+
                         </button>
+
 
                         <button
                             class="delete-btn"
                             onclick="deleteDepartment(${department.departmentId})">
+
                             Delete
+
                         </button>
 
                     </div>
 
                 </td>
+
             `;
+
 
             tableBody.appendChild(row);
 
@@ -292,26 +594,40 @@ async function loadDepartments() {
         const select =
             document.getElementById("departmentId");
 
+
         select.innerHTML =
-            `<option value="">Select Department</option>`;
+            `<option value="">
+                Select Department
+            </option>`;
+
 
         departments.forEach(department => {
 
             const option =
                 document.createElement("option");
 
-            option.value = department.departmentId;
 
-            option.textContent = department.departmentName;
+            option.value =
+                department.departmentId;
+
+
+            option.textContent =
+                department.departmentName;
+
 
             select.appendChild(option);
 
         });
 
     }
+
+
     catch (error) {
 
-        console.error("Department loading error:", error);
+        console.error(
+            "Department loading error:",
+            error
+        );
 
     }
 
@@ -324,58 +640,81 @@ async function loadDepartments() {
 
 function openEmployeeModal(employee = null) {
 
-    document.getElementById("employeeModal").style.display =
-        "flex";
+    document.getElementById("employeeModal")
+        .style.display = "flex";
+
 
     loadDepartments();
 
+
     if (employee) {
 
-        document.getElementById("employeeModalTitle")
-            .textContent = "Edit Employee";
+        document.getElementById(
+            "employeeModalTitle"
+        ).textContent = "Edit Employee";
 
-        document.getElementById("employeeId").value =
-            employee.employeeId;
 
-        document.getElementById("empcode").value =
-            employee.empcode;
+        document.getElementById("employeeId")
+            .value = employee.employeeId;
 
-        document.getElementById("empFname").value =
-            employee.empFname;
 
-        document.getElementById("empLname").value =
-            employee.empLname;
+        document.getElementById("empcode")
+            .value = employee.empcode;
 
-        document.getElementById("empemail").value =
-            employee.empemail;
 
-        document.getElementById("empmobile").value =
-            employee.empmobile;
+        document.getElementById("empFname")
+            .value = employee.empFname;
 
-        document.getElementById("dob").value =
-            employee.dob;
 
-        document.getElementById("departmentId").value =
-            employee.departmentId;
+        document.getElementById("empLname")
+            .value = employee.empLname;
 
-        document.getElementById("salary").value =
-            employee.salary;
 
-        document.getElementById("joiningDate").value =
-            employee.joiningDate;
+        document.getElementById("empemail")
+            .value = employee.empemail;
 
-        document.getElementById("isActive").checked =
-            employee.isActive;
+
+        document.getElementById("empmobile")
+            .value = employee.empmobile;
+
+
+        document.getElementById("dob")
+            .value = employee.dob;
+
+
+        document.getElementById("departmentId")
+            .value = employee.departmentId;
+
+
+        document.getElementById("salary")
+            .value = employee.salary;
+
+
+        document.getElementById("joiningDate")
+            .value = employee.joiningDate;
+
+
+        document.getElementById("isActive")
+            .checked = employee.isActive;
 
     }
+
+
     else {
 
-        document.getElementById("employeeModalTitle")
-            .textContent = "Add Employee";
+        document.getElementById(
+            "employeeModalTitle"
+        ).textContent = "Add Employee";
 
-        document.getElementById("employeeForm").reset();
 
-        document.getElementById("employeeId").value = "";
+        document.getElementById(
+            "employeeForm"
+        ).reset();
+
+
+        document.getElementById(
+            "employeeId"
+        ).value = "";
 
     }
 
@@ -384,8 +723,8 @@ function openEmployeeModal(employee = null) {
 
 function closeEmployeeModal() {
 
-    document.getElementById("employeeModal").style.display =
-        "none";
+    document.getElementById("employeeModal")
+        .style.display = "none";
 
 }
 
@@ -399,8 +738,12 @@ document.getElementById("employeeForm")
 
         event.preventDefault();
 
+
         const employeeId =
-            document.getElementById("employeeId").value;
+            document.getElementById(
+                "employeeId"
+            ).value;
+
 
         const employee = {
 
@@ -409,80 +752,137 @@ document.getElementById("employeeForm")
                     ? parseInt(employeeId)
                     : 0,
 
+
             empcode:
-                document.getElementById("empcode").value,
+                document.getElementById(
+                    "empcode"
+                ).value,
+
 
             empFname:
-                document.getElementById("empFname").value,
+                document.getElementById(
+                    "empFname"
+                ).value,
+
 
             empLname:
-                document.getElementById("empLname").value,
+                document.getElementById(
+                    "empLname"
+                ).value,
+
 
             empemail:
-                document.getElementById("empemail").value,
+                document.getElementById(
+                    "empemail"
+                ).value,
+
 
             empmobile:
                 parseInt(
-                    document.getElementById("empmobile").value
+                    document.getElementById(
+                        "empmobile"
+                    ).value
                 ),
 
+
             dob:
-                document.getElementById("dob").value,
+                document.getElementById(
+                    "dob"
+                ).value,
+
 
             departmentId:
                 parseInt(
-                    document.getElementById("departmentId").value
+                    document.getElementById(
+                        "departmentId"
+                    ).value
                 ),
+
 
             salary:
                 parseFloat(
-                    document.getElementById("salary").value
+                    document.getElementById(
+                        "salary"
+                    ).value
                 ),
 
+
             joiningDate:
-                document.getElementById("joiningDate").value,
+                document.getElementById(
+                    "joiningDate"
+                ).value,
+
 
             isActive:
-                document.getElementById("isActive").checked,
+                document.getElementById(
+                    "isActive"
+                ).checked,
+
 
             department: null
+
         };
 
 
         try {
 
+            const token = getToken();
+
             let response;
+
 
             if (employeeId) {
 
-                response = await fetch(
-                    `${API_BASE}/Employee/${employeeId}`,
-                    {
-                        method: "PUT",
+                response =
+                    await fetch(
+                        `${API_BASE}/Employee/${employeeId}`,
+                        {
 
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                            method: "PUT",
 
-                        body: JSON.stringify(employee)
-                    }
-                );
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`
+
+                            },
+
+                            body:
+                                JSON.stringify(employee)
+
+                        }
+                    );
 
             }
+
+
             else {
 
-                response = await fetch(
-                    `${API_BASE}/Employee`,
-                    {
-                        method: "POST",
+                response =
+                    await fetch(
+                        `${API_BASE}/Employee`,
+                        {
 
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                            method: "POST",
 
-                        body: JSON.stringify(employee)
-                    }
-                );
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`
+
+                            },
+
+                            body:
+                                JSON.stringify(employee)
+
+                        }
+                    );
 
             }
 
@@ -492,6 +892,7 @@ document.getElementById("employeeForm")
                 const errorText =
                     await response.text();
 
+
                 throw new Error(errorText);
 
             }
@@ -499,17 +900,22 @@ document.getElementById("employeeForm")
 
             closeEmployeeModal();
 
+
             await loadEmployees();
+
 
             await loadDashboard();
 
         }
+
+
         catch (error) {
 
             console.error(
                 "Employee save error:",
                 error
             );
+
 
             alert(
                 "Could not save employee."
@@ -528,23 +934,34 @@ async function editEmployee(id) {
 
     try {
 
-        /*
-           Your current backend does not have
-           GET /api/Employee/{id}.
+        const token = getToken();
 
-           So we get all employees and find the one.
-        */
 
         const response =
-            await fetch(`${API_BASE}/Employee`);
+            await fetch(
+                `${API_BASE}/Employee`,
+                {
+
+                    headers: {
+
+                        "Authorization":
+                            `Bearer ${token}`
+
+                    }
+
+                }
+            );
+
 
         const employees =
             await response.json();
+
 
         const employee =
             employees.find(
                 e => e.employeeId === id
             );
+
 
         if (!employee) {
 
@@ -554,9 +971,12 @@ async function editEmployee(id) {
 
         }
 
+
         openEmployeeModal(employee);
 
     }
+
+
     catch (error) {
 
         console.error(
@@ -580,35 +1000,61 @@ async function deleteEmployee(id) {
             "Are you sure you want to delete this employee?"
         );
 
+
     if (!confirmed) {
+
         return;
+
     }
 
+
     try {
+
+        const token = getToken();
+
 
         const response =
             await fetch(
                 `${API_BASE}/Employee/${id}`,
                 {
-                    method: "DELETE"
+
+                    method: "DELETE",
+
+                    headers: {
+
+                        "Authorization":
+                            `Bearer ${token}`
+
+                    }
+
                 }
             );
 
+
         if (!response.ok) {
-            throw new Error("Delete failed");
+
+            throw new Error(
+                "Delete failed"
+            );
+
         }
 
+
         await loadEmployees();
+
 
         await loadDashboard();
 
     }
+
+
     catch (error) {
 
         console.error(
             "Delete employee error:",
             error
         );
+
 
         alert(
             "Could not delete employee."
@@ -625,31 +1071,45 @@ async function deleteEmployee(id) {
 
 function openDepartmentModal(department = null) {
 
-    document.getElementById("departmentModal")
-        .style.display = "flex";
+    document.getElementById(
+        "departmentModal"
+    ).style.display = "flex";
+
 
     if (department) {
 
-        document.getElementById("departmentModalTitle")
-            .textContent = "Edit Department";
+        document.getElementById(
+            "departmentModalTitle"
+        ).textContent = "Edit Department";
 
-        document.getElementById("departmentId")
-            .value = department.departmentId;
 
-        document.getElementById("departmentName")
-            .value = department.departmentName;
+        document.getElementById(
+            "departmentId"
+        ).value = department.departmentId;
+
+
+        document.getElementById(
+            "departmentName"
+        ).value = department.departmentName;
 
     }
+
+
     else {
 
-        document.getElementById("departmentModalTitle")
-            .textContent = "Add Department";
+        document.getElementById(
+            "departmentModalTitle"
+        ).textContent = "Add Department";
 
-        document.getElementById("departmentForm")
-            .reset();
 
-        document.getElementById("departmentId")
-            .value = "";
+        document.getElementById(
+            "departmentForm"
+        ).reset();
+
+
+        document.getElementById(
+            "departmentId"
+        ).value = "";
 
     }
 
@@ -658,8 +1118,9 @@ function openDepartmentModal(department = null) {
 
 function closeDepartmentModal() {
 
-    document.getElementById("departmentModal")
-        .style.display = "none";
+    document.getElementById(
+        "departmentModal"
+    ).style.display = "none";
 
 }
 
@@ -673,8 +1134,12 @@ document.getElementById("departmentForm")
 
         event.preventDefault();
 
+
         const departmentId =
-            document.getElementById("departmentId").value;
+            document.getElementById(
+                "departmentId"
+            ).value;
+
 
         const department = {
 
@@ -683,8 +1148,12 @@ document.getElementById("departmentForm")
                     ? parseInt(departmentId)
                     : 0,
 
+
             departmentName:
-                document.getElementById("departmentName").value,
+                document.getElementById(
+                    "departmentName"
+                ).value,
+
 
             employees: []
 
@@ -693,38 +1162,63 @@ document.getElementById("departmentForm")
 
         try {
 
+            const token = getToken();
+
             let response;
+
 
             if (departmentId) {
 
-                response = await fetch(
-                    `${API_BASE}/Department/${departmentId}`,
-                    {
-                        method: "PUT",
+                response =
+                    await fetch(
+                        `${API_BASE}/Department/${departmentId}`,
+                        {
 
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                            method: "PUT",
 
-                        body: JSON.stringify(department)
-                    }
-                );
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`
+
+                            },
+
+                            body:
+                                JSON.stringify(department)
+
+                        }
+                    );
 
             }
+
+
             else {
 
-                response = await fetch(
-                    `${API_BASE}/Department`,
-                    {
-                        method: "POST",
+                response =
+                    await fetch(
+                        `${API_BASE}/Department`,
+                        {
 
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                            method: "POST",
 
-                        body: JSON.stringify(department)
-                    }
-                );
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${token}`
+
+                            },
+
+                            body:
+                                JSON.stringify(department)
+
+                        }
+                    );
 
             }
 
@@ -734,23 +1228,30 @@ document.getElementById("departmentForm")
                 const errorText =
                     await response.text();
 
+
                 throw new Error(errorText);
 
             }
 
+
             closeDepartmentModal();
 
+
             await loadDepartments();
+
 
             await loadDashboard();
 
         }
+
+
         catch (error) {
 
             console.error(
                 "Department save error:",
                 error
             );
+
 
             alert(
                 "Could not save department."
@@ -769,16 +1270,34 @@ async function editDepartment(id) {
 
     try {
 
+        const token = getToken();
+
+
         const response =
-            await fetch(`${API_BASE}/Department`);
+            await fetch(
+                `${API_BASE}/Department`,
+                {
+
+                    headers: {
+
+                        "Authorization":
+                            `Bearer ${token}`
+
+                    }
+
+                }
+            );
+
 
         const departments =
             await response.json();
+
 
         const department =
             departments.find(
                 d => d.departmentId === id
             );
+
 
         if (!department) {
 
@@ -788,9 +1307,12 @@ async function editDepartment(id) {
 
         }
 
+
         openDepartmentModal(department);
 
     }
+
+
     catch (error) {
 
         console.error(
@@ -814,42 +1336,66 @@ async function deleteDepartment(id) {
             "Are you sure you want to delete this department?"
         );
 
+
     if (!confirmed) {
+
         return;
+
     }
 
+
     try {
+
+        const token = getToken();
+
 
         const response =
             await fetch(
                 `${API_BASE}/Department/${id}`,
                 {
-                    method: "DELETE"
+
+                    method: "DELETE",
+
+                    headers: {
+
+                        "Authorization":
+                            `Bearer ${token}`
+
+                    }
+
                 }
             );
+
 
         if (!response.ok) {
 
             const errorText =
                 await response.text();
 
+
             throw new Error(errorText);
 
         }
 
+
         await loadDepartments();
 
+
         await loadEmployees();
+
 
         await loadDashboard();
 
     }
+
+
     catch (error) {
 
         console.error(
             "Delete department error:",
             error
         );
+
 
         alert(
             "Could not delete department."
@@ -868,11 +1414,33 @@ document.addEventListener(
     "DOMContentLoaded",
     async function () {
 
-        await loadDepartments();
+        // If a token already exists,
+        // directly open the application.
 
-        await loadEmployees();
+        const token = getToken();
 
-        await loadDashboard();
+
+        if (token) {
+
+            document.getElementById(
+                "loginSection"
+            ).style.display = "none";
+
+
+            document.getElementById(
+                "mainApp"
+            ).style.display = "block";
+
+
+            await loadDepartments();
+
+
+            await loadEmployees();
+
+
+            await loadDashboard();
+
+        }
 
     }
 );

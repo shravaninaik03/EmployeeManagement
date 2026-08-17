@@ -3,11 +3,13 @@ using Emp.Modals;
 using Emp.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Emp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class EmployeeController(IEmployeeService employeeService) : ControllerBase
 {
     private readonly IEmployeeService _employeeService = employeeService;
@@ -66,14 +68,14 @@ public class EmployeeController(IEmployeeService employeeService) : ControllerBa
         }
         return Ok(emp);
     }
-
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> AddEmployee(CreateEmployeeDto employee)
     {
         var createdEmp = await _employeeService.AddEmployee(employee);
         return Ok(createdEmp);
     }
-
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(int id, EmployeeUpdateDto employeeDto)
     {
@@ -84,7 +86,7 @@ public class EmployeeController(IEmployeeService employeeService) : ControllerBa
 
         return Ok(updatedEmp);
     }
-
+    [Authorize(Roles ="Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEmployee(int id)
     {

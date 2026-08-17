@@ -2,6 +2,7 @@ using Emp.DTOs;
 using Emp.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Emp.Controllers;
 
